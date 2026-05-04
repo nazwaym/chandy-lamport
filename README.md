@@ -576,22 +576,4 @@ chore:    Maintenance (build, CI, dll)
 
 ---
 
-## 📝 License
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
-
----
-
-## 📚 References
-
-1. **Chandy, K. M., & Lamport, L.** (1985). *Distributed Snapshots: Determining Global States of Distributed Systems*. ACM Transactions on Computer Systems, 3(1), 63–75.
-2. **Tanenbaum, A. S., & Van Steen, M.** (2017). *Distributed Systems: Principles and Paradigms* (3rd ed.). Pearson.
-3. **Coulouris, G., Dollimore, J., Kindberg, T., & Blair, G.** (2012). *Distributed Systems: Concepts and Design* (5th ed.). Addison-Wesley.
-4. **Docker Documentation** — https://docs.docker.com/compose/
-5. **PostgreSQL Documentation** — https://www.postgresql.org/docs/15/
-
----
-
-<p align="center">
-  Made with ☕ for distributed systems research
-</p>

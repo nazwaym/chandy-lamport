@@ -35,9 +35,6 @@
 - [Configuration](#%EF%B8%8F-configuration)
 - [Failure Scenarios](#-failure-scenarios)
 - [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [References](#-references)
 
 ---
 
@@ -677,58 +674,8 @@ Snapshot dianggap **consistent cut** jika memenuhi:
 - ✅ Pesan in-transit dicatat sebagai channel state
 - ✅ Tidak ada pesan yang dikirim sesudah snapshot tapi diterima sebelum snapshot (dijamin oleh FIFO + MARKER sebagai separator)
 
-### E. Perbandingan Sebelum vs Sesudah Perbaikan
-
-| Aspek | Sebelum | Sesudah |
-|-------|---------|---------|
-| Kepatuhan teori | 6/12 (50%) | **12/12 (100%)** |
-| Komunikasi antar-worker | ❌ Tidak ada | ✅ Application messages |
-| Channel state recording | ❌ Tidak ada | ✅ Per-channel recording |
-| MARKER propagation | ❌ Hanya coordinator→worker | ✅ Worker→worker juga |
-| Isi snapshot | Local state saja | **Local state + channel state** |
-| ACK timing | Langsung setelah local snapshot | **Setelah snapshot lengkap** |
-| Database schema | 5 tabel | **6 tabel** (+channel_states) |
-| Metrik | RTO, Loss, FLR | **+Channel msgs, completeness** |
-
-### F. Perbandingan dengan Sistem Terkait
-
-| Aspek | Implementasi Ini | Apache Flink | Google Spanner |
-|-------|-----------------|--------------|----------------|
-| Algoritma dasar | Chandy-Lamport | Chandy-Lamport (ABS) | TrueTime + 2PC |
-| Inisiator | Coordinator | JobManager | Leader |
-| Channel state | ✅ Recording | ✅ Barrier alignment | N/A (synchronous) |
-| MARKER/Barrier | TCP MARKER msg | Checkpoint barrier | Commit timestamp |
-| Storage | File .ckpt + PostgreSQL | State backend (RocksDB) | Spanner FS |
-| Skala | 3 worker (demo) | 1000+ tasks (production) | Global (production) |
-| Tujuan | Penelitian | Stream processing | OLTP database |
-
-> Implementasi ini mengikuti prinsip yang **sama** dengan Apache Flink (Chandy-Lamport based), namun dalam skala demonstrasi untuk tujuan penelitian akademis.
 
 ---
 
-## 🤝 Contributing
-
-Kontribusi sangat diterima! Untuk berkontribusi:
-
-1. Fork repository ini
-2. Buat feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit perubahan (`git commit -m 'feat: add amazing feature'`)
-4. Push ke branch (`git push origin feature/amazing-feature`)
-5. Buka Pull Request
-
-### Commit Convention
-
-Gunakan [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat:     Fitur baru
-fix:      Perbaikan bug
-docs:     Perubahan dokumentasi
-refactor: Refaktoring kode
-test:     Penambahan/perubahan test
-chore:    Maintenance (build, CI, dll)
-```
-
----
 
 

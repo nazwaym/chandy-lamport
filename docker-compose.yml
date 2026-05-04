@@ -1,0 +1,170 @@
+version: '3.8'
+
+# =============================================================
+# DOCKER COMPOSE - Distributed Checkpointing System
+# Chandy-Lamport Algorithm Implementation
+# =============================================================
+
+services:
+
+  # ─── Database PostgreSQL ───────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: checkpoint_db
+    environment:
+      POSTGRES_DB:       checkpoint_db
+      POSTGRES_USER:     admin
+      POSTGRES_PASSWORD: admin123
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - ckpt_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d checkpoint_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── Node Koordinator ─────────────────────────────────
+  coordinator:
+    build:
+      context: ./coordinator
+      dockerfile: Dockerfile
+    container_name: coordinator
+    environment:
+      DB_HOST:          db
+      DB_PORT:          5432
+      DB_NAME:          checkpoint_db
+      DB_USER:          admin
+      DB_PASS:          admin123
+      COORDINATOR_PORT: 5000
+    volumes:
+      - checkpoint_storage:/checkpoint_storage
+      - ./test_scenarios/run_tests.py:/app/run_tests.py
+    ports:
+      - "7000:5000"
+    networks:
+      - ckpt_net
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Worker Node 1 ───────────────────────────────────
+  worker1:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker1
+    environment:
+      NODE_NAME:        worker1
+      NODE_PORT:        6001
+      COORDINATOR_HOST: coordinator
+      COORDINATOR_PORT: 5000
+      DB_HOST:          db
+      DB_PORT:          5432
+      DB_NAME:          checkpoint_db
+      DB_USER:          admin
+      DB_PASS:          admin123
+    volumes:
+      - checkpoint_storage:/checkpoint_storage
+    ports:
+      - "6001:6001"
+    networks:
+      - ckpt_net
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Worker Node 2 ───────────────────────────────────
+  worker2:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker2
+    environment:
+      NODE_NAME:        worker2
+      NODE_PORT:        6002
+      COORDINATOR_HOST: coordinator
+      COORDINATOR_PORT: 5000
+      DB_HOST:          db
+      DB_PORT:          5432
+      DB_NAME:          checkpoint_db
+      DB_USER:          admin
+      DB_PASS:          admin123
+    volumes:
+      - checkpoint_storage:/checkpoint_storage
+    ports:
+      - "6002:6002"
+    networks:
+      - ckpt_net
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Worker Node 3 ───────────────────────────────────
+  worker3:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker3
+    environment:
+      NODE_NAME:        worker3
+      NODE_PORT:        6003
+      COORDINATOR_HOST: coordinator
+      COORDINATOR_PORT: 5000
+      DB_HOST:          db
+      DB_PORT:          5432
+      DB_NAME:          checkpoint_db
+      DB_USER:          admin
+      DB_PASS:          admin123
+    volumes:
+      - checkpoint_storage:/checkpoint_storage
+    ports:
+      - "6003:6003"
+    networks:
+      - ckpt_net
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Recovery Manager ────────────────────────────────
+  recovery_manager:
+    build:
+      context: ./recovery_manager
+      dockerfile: Dockerfile
+    container_name: recovery_manager
+    environment:
+      DB_HOST:          db
+      DB_PORT:          5432
+      DB_NAME:          checkpoint_db
+      DB_USER:          admin
+      DB_PASS:          admin123
+      COORDINATOR_HOST: coordinator
+      COORDINATOR_PORT: 5000
+    volumes:
+      - checkpoint_storage:/checkpoint_storage
+    networks:
+      - ckpt_net
+    depends_on:
+      db:
+        condition: service_healthy
+      coordinator:
+        condition: service_started
+    restart: unless-stopped
+
+# ─── Volumes & Networks ───────────────────────────────
+volumes:
+  pg_data:
+    name: pg_data
+  checkpoint_storage:
+    name: checkpoint_storage
+
+networks:
+  ckpt_net:
+    name: ckpt_net
+    driver: bridge
